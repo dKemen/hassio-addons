@@ -1,4 +1,4 @@
-# EWS99 Home Assistant Add-ons
+Home Assistant Add-ons
 
 ## Globalping
 

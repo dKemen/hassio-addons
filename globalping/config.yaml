@@ -1,6 +1,6 @@
 ---
 name: Globalping
-version: 1.0
+version: "1.1"
 slug: globalping
 description: Monitor, debug and benchmark your internet infrastructure from a globally distributed network of probes
 url: https://github.com/erwin-willems/hassio-addons
@@ -17,3 +17,7 @@ auth_api: true
 host_network: true
 hassio_api: true
 hassio_role: manager
+options:
+  adoption_token: ""
+schema:
+  adoption_token: str?

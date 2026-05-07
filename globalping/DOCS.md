@@ -4,18 +4,30 @@ Monitor, debug and benchmark your internet infrastructure from a globally distri
 
 ## Configuration
 
-After installing this add-on, you can adopt your probe:
+### Option: `adoption_token` (optional)
+
+Your Globalping adoption token. When set, the probe is automatically adopted
+to your account on startup — no manual interaction needed. Get your token at
+https://dash.globalping.io/probes (the same page that shows the "Adopt a
+probe" wizard). Treat the token as a secret: anyone with it can register
+probes under your account.
+
+Leave the field empty to fall back to the interactive adoption-code flow
+described below.
+
+### Manual adoption (when no token is configured)
+
 - Go to https://dash.globalping.io/probes
 - Press the "Adopt a probe" button
-- Follow the wizzard to adopt your probe
+- Follow the wizard to adopt your probe
 - The adoption code can be found in the logs of the addon:
   ```
-    [2024-10-10 18:56:19] [WARN] [adoption-code] 
-                                              ,,         
+    [2024-10-10 18:56:19] [WARN] [adoption-code]
+                                              ,,
         __                                 o-°°|\_____/)
     (___()'`; Your adoption code is: 123456  \_/|_)     )
-    /,    /`                                    \  __  / 
-    \\"--\\                                     (_/ (_/  
+    /,    /`                                    \  __  /
+    \\"--\\                                     (_/ (_/
   ```
 
 ## License

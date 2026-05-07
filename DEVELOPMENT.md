@@ -1,5 +1,5 @@
-## Adguard2
+## Globalping
 
-To update adguard:
-- Update versions in adguard2/build.yaml
-- Update version in adguard2/config.yaml
+To update globalping:
+- The add-on tracks `globalping/globalping-probe:latest` (see `globalping/build.yaml`).
+- Bump `version` in `globalping/config.yaml` when releasing a new add-on version.

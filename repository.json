@@ -1,5 +1,5 @@
 {
-  "name": "EWS99 Home Assistant Add-Ons",
-  "url": "https://github.com/erwin-willems/hassio-addons",
-  "maintainer": "Erwin Willems <erwin.willems@gmail.com>"
+  "name": "Home Assistant Add-Ons",
+  "url": "https://github.com/dKemen/hassio-addons/",
+  "maintainer": "Daniel Kemen <opensource@daniel-kemen.de>"
 }

@@ -1,0 +1,38 @@
+---
+configuration:
+  rate_limit:
+    name: Rate limiting
+    description: >-
+      Limit each client to a fixed number of requests per five minutes. Worth
+      enabling only if the add-on is reachable beyond your own network.
+  ws_fallback:
+    name: WebSocket fallback
+    description: >-
+      Allow transfers to fall back to the WebSocket connection when a direct
+      device-to-device connection cannot be established. Enable this if devices
+      see each other but transfers never start. Files then travel through the
+      add-on, which is slower.
+  debug_mode:
+    name: Debug logging
+    description: >-
+      Log the environment and the IP addresses of connected devices. Useful
+      when devices do not discover each other.
+  ipv6_localize:
+    name: IPv6 grouping
+    description: >-
+      Number of IPv6 hextets (1-7) used to group devices. Only needed on
+      IPv6-only networks where devices otherwise fail to find each other. Leave
+      empty in all other cases.
+  signaling_server:
+    name: External signaling server
+    description: >-
+      Use another server to broker connections instead of this add-on. Only for
+      special setups; leave empty.
+  timezone:
+    name: Time zone
+    description: Time zone used for log timestamps, for example Europe/Berlin.
+network:
+  3000/tcp: >-
+    Direct access for devices that are not signed in to Home Assistant, such as
+    a visitor's phone. Set to disabled to allow access through the Home
+    Assistant sidebar only.

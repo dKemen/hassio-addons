@@ -60,6 +60,25 @@ Note that SparkyFitness itself is not open source in the usual sense: its
 licence allows personal, educational and nonprofit use but prohibits commercial
 use without permission.
 
+## PairDrop
+
+PairDrop transfers files and text directly between devices on your network using WebRTC — a self-hosted alternative to AirDrop. Nothing goes through a cloud service; the add-on only brokers the connection between the two devices, and it stores no data at all.
+
+It appears in the Home Assistant sidebar and is also reachable at `http://<your-ha-host>:3000` for devices without a Home Assistant login, such as a visitor's phone. Both routes share the same room, so devices see each other no matter which one they used.
+
+![Supports aarch64 Architecture][aarch64-shield] ![Supports amd64 Architecture][amd64-shield] ![Does not support armv7 Architecture][armv7-no-shield]
+
+### Configuration
+
+No configuration is needed. The options that occasionally help:
+
+- `ws_fallback`: enable when devices see each other but transfers never start —
+  some networks block the direct connection.
+- `debug_mode`: logs peer IP addresses when devices fail to discover each other.
+
+`rate_limit`, `ipv6_localize`, `signaling_server` and `timezone` cover rarer
+cases and are documented in [pairdrop/DOCS.md](pairdrop/DOCS.md).
+
 [aarch64-shield]: https://img.shields.io/badge/aarch64-yes-green.svg
 [amd64-shield]: https://img.shields.io/badge/amd64-yes-green.svg
 [armv7-shield]: https://img.shields.io/badge/armv7-yes-green.svg

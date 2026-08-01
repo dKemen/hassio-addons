@@ -1,0 +1,33 @@
+---
+name: PairDrop
+version: "1.11.2"
+slug: pairdrop
+description: Local file sharing in your browser - a self-hosted AirDrop alternative
+url: https://github.com/dKemen/hassio-addons/tree/master/pairdrop
+panel_icon: mdi:share-variant
+startup: application
+boot: auto
+# The base image uses s6-overlay v3, which has to run as PID 1.
+init: false
+arch:
+  - aarch64
+  - amd64
+ingress: true
+ingress_port: 3000
+ports:
+  3000/tcp: 3000
+ports_description:
+  3000/tcp: >-
+    Direct access for devices that are not signed in to Home Assistant. Set to
+    disabled to allow Ingress only.
+options:
+  rate_limit: false
+  ws_fallback: false
+  debug_mode: false
+schema:
+  rate_limit: bool
+  ws_fallback: bool
+  debug_mode: bool
+  ipv6_localize: int(1,7)?
+  signaling_server: str?
+  timezone: str?

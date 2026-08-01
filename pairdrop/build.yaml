@@ -1,0 +1,7 @@
+---
+# Kept for Supervisor versions that still read build.yaml for locally built
+# add-ons. Newer Supervisor releases no longer inject BUILD_FROM, which is why
+# the Dockerfile carries the same value as an ARG default.
+build_from:
+  aarch64: lscr.io/linuxserver/pairdrop:v1.11.2-ls142
+  amd64: lscr.io/linuxserver/pairdrop:v1.11.2-ls142

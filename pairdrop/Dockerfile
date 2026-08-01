@@ -2,7 +2,11 @@
 # upstream workflow only builds locally as a CI check and publishes nothing.
 # It already ships s6-overlay v3 and the PairDrop service, so this add-on only
 # has to translate the Home Assistant options into environment variables.
-ARG BUILD_FROM=lscr.io/linuxserver/pairdrop:v1.11.2-ls142
+#
+# Pulled from ghcr.io rather than lscr.io. Both serve the same image, but
+# lscr.io is a redirector that is not reachable from every network, and a
+# failure there breaks the build before it starts.
+ARG BUILD_FROM=ghcr.io/linuxserver/pairdrop:v1.11.2-ls142
 # hadolint ignore=DL3006
 FROM ${BUILD_FROM}
 

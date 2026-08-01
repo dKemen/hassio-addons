@@ -17,6 +17,18 @@ configuration:
     description: >-
       Log the environment and the IP addresses of connected devices. Useful
       when devices do not discover each other.
+  instance_name:
+    name: Instance name
+    description: >-
+      Rename the instance, for example "Kemen Drop". Changes the browser tab
+      title, the name used when the app is installed to a home screen, and the
+      About dialog. It does not change the Home Assistant sidebar entry, which
+      is fixed in the add-on configuration.
+  primary_color:
+    name: Accent colour
+    description: >-
+      Six-digit hex colour such as #ff8800, replacing the default #4285f4.
+      Applies to both light and dark mode.
   ipv6_localize:
     name: IPv6 grouping
     description: >-

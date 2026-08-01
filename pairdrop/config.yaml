@@ -1,6 +1,6 @@
 ---
 name: PairDrop
-version: "1.11.2"
+version: "1.11.2.1"
 slug: pairdrop
 description: Local file sharing in your browser - a self-hosted AirDrop alternative
 url: https://github.com/dKemen/hassio-addons/tree/master/pairdrop
@@ -28,6 +28,8 @@ schema:
   rate_limit: bool
   ws_fallback: bool
   debug_mode: bool
+  instance_name: str(1,32)?
+  primary_color: match(^#[0-9a-fA-F]{6}$)?
   ipv6_localize: int(1,7)?
   signaling_server: str?
   timezone: str?

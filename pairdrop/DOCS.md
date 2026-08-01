@@ -64,6 +64,32 @@ of directly between the devices, which is slower.
 Logs the environment and the IP addresses of connected peers. Defaults to
 `false`. Useful when devices do not discover each other.
 
+### Option: `instance_name` (optional)
+
+Renames the instance, for example `Kemen Drop`. PairDrop has no setting for
+this, so the add-on rewrites the files it serves. Affected are the browser tab
+title, the name used when the app is installed to a home screen, and the
+heading in the About dialog.
+
+Two things it does **not** change:
+
+- **The entry in the Home Assistant sidebar.** That comes from `panel_title` in
+  `pairdrop/config.yaml` and the Supervisor reads it only from that file, so no
+  add-on option can drive it. To rename it, edit `config.yaml` in this
+  repository and reinstall the add-on.
+- **Sentences that mention PairDrop inside the interface**, such as "Open
+  PairDrop on other devices to send files". Those come from the translation
+  files for 30-odd languages, and some of them refer to the project rather than
+  to your instance — "PairDrop on GitHub", for instance. Rewriting them all
+  would produce wrong text more often than right text.
+
+### Option: `primary_color` (optional)
+
+Overrides the accent colour, given as a six-digit hex value such as `#ff8800`.
+PairDrop uses `#4285f4` by default and offers no setting for it. The add-on
+appends a CSS rule, which also covers the derived accent colour and the theme
+colour used by the installed app. Light and dark mode both follow it.
+
 ### Option: `ipv6_localize` (optional)
 
 Number of IPv6 hextets, `1` to `7`, used to group peers. Only relevant on

@@ -16,6 +16,14 @@ SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 # installing it explicitly keeps the add-on independent of that.
 RUN apk add --no-cache jq
 
+# Untouched copies of the files the branding options rewrite. run.sh restores
+# from these on every start, so repeated restarts cannot stack edits.
+RUN set -eu; \
+    mkdir -p /opt/pairdrop-pristine/styles; \
+    cd /app/pairdrop/public; \
+    cp index.html manifest.json service-worker.js /opt/pairdrop-pristine/; \
+    cp styles/styles-main.css /opt/pairdrop-pristine/styles/
+
 COPY run.sh /run.sh
 RUN chmod 755 /run.sh
 

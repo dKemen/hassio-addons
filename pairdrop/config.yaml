@@ -1,6 +1,6 @@
 ---
 name: PairDrop
-version: "1.11.2.1"
+version: "1.11.3"
 slug: pairdrop
 description: Local file sharing in your browser - a self-hosted AirDrop alternative
 url: https://github.com/dKemen/hassio-addons/tree/master/pairdrop

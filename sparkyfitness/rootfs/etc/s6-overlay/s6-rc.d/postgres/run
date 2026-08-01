@@ -1,0 +1,17 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Home Assistant Add-on: SparkyFitness
+# Runs the bundled PostgreSQL server
+# ==============================================================================
+declare -r PGDATA="${PGDATA:-/data/postgresql}"
+
+if [ "${SPARKYFITNESS_LOCAL_DB}" != "true" ]; then
+    bashio::log.info \
+        "An external database is configured, the bundled PostgreSQL stays idle"
+    exec /command/s6-pause
+fi
+
+bashio::log.info "Starting PostgreSQL..."
+
+exec su-exec postgres "${PG_BIN}/postgres" -D "${PGDATA}"

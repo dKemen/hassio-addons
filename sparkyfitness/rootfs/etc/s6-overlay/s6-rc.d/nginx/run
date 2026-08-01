@@ -1,0 +1,28 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Home Assistant Add-on: SparkyFitness
+# Serves the web interface
+#
+# This hands over to the upstream frontend entrypoint, which renders the nginx
+# template with envsubst, validates it and execs nginx. Reusing it keeps the
+# proxy rules, rate limit zones and cache headers in sync with upstream.
+# ==============================================================================
+bashio::log.info "Waiting for the SparkyFitness server..."
+
+# Not bashio::net.wait_for: that swallows the timeout and always reports
+# success, so a backend that never comes up would go unnoticed.
+declare -r TIMEOUT=300
+declare elapsed=0
+until (echo > /dev/tcp/127.0.0.1/3010) 2> /dev/null; do
+    if [ "${elapsed}" -ge "${TIMEOUT}" ]; then
+        bashio::exit.nok \
+            "The SparkyFitness server did not start within ${TIMEOUT} seconds"
+    fi
+    sleep 1
+    elapsed=$((elapsed + 1))
+done
+
+bashio::log.info "Starting the web interface..."
+
+exec /usr/share/sparkyfitness/frontend-entrypoint.sh

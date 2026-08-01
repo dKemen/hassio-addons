@@ -1,0 +1,15 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Home Assistant Add-on: SparkyFitness
+# Runs the SparkyFitness backend
+#
+# The server applies all pending migrations and the RLS policies before it
+# starts listening, so no separate migration step is needed.
+# ==============================================================================
+cd /app/SparkyFitnessServer \
+    || bashio::exit.nok "The server directory is missing from the image"
+
+bashio::log.info "Starting the SparkyFitness server..."
+
+exec ./node_modules/.bin/tsx index.ts

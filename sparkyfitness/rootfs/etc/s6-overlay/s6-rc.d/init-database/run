@@ -1,0 +1,101 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Home Assistant Add-on: SparkyFitness
+# Waits for the database and provisions the role and database the server needs
+#
+# The server itself creates the limited application role, the schema, every
+# migration and the RLS policies on startup. Only the owner role and the
+# database have to exist beforehand.
+# ==============================================================================
+declare -r SOCKET_DIR="/run/postgresql"
+declare -r TIMEOUT=300
+
+declare elapsed
+
+psql_super() {
+    su-exec postgres "${PG_BIN}/psql" \
+        --no-psqlrc \
+        --host "${SOCKET_DIR}" \
+        --username postgres \
+        --dbname postgres \
+        --set ON_ERROR_STOP=1 \
+        "$@"
+}
+
+if [ "${SPARKYFITNESS_LOCAL_DB}" != "true" ]; then
+    bashio::log.info \
+        "Waiting for the external database at" \
+        "${SPARKY_FITNESS_DB_HOST}:${SPARKY_FITNESS_DB_PORT}..."
+
+    # Not bashio::net.wait_for: that swallows the timeout and always reports
+    # success, so an unreachable database would go unnoticed here.
+    elapsed=0
+    until (echo > "/dev/tcp/${SPARKY_FITNESS_DB_HOST}/${SPARKY_FITNESS_DB_PORT}") \
+        2> /dev/null; do
+        if [ "${elapsed}" -ge "${TIMEOUT}" ]; then
+            bashio::exit.nok \
+                "The external database was unreachable for ${TIMEOUT} seconds"
+        fi
+        sleep 1
+        elapsed=$((elapsed + 1))
+    done
+
+    bashio::log.info \
+        "The database '${SPARKY_FITNESS_DB_NAME}' and the role" \
+        "'${SPARKY_FITNESS_DB_USER}' must already exist on the external server."
+    exit 0
+fi
+
+bashio::log.info "Waiting for PostgreSQL to accept connections..."
+
+elapsed=0
+until su-exec postgres "${PG_BIN}/pg_isready" \
+    --host "${SOCKET_DIR}" --username postgres --quiet; do
+    if [ "${elapsed}" -ge "${TIMEOUT}" ]; then
+        bashio::exit.nok \
+            "PostgreSQL did not become ready within ${TIMEOUT} seconds"
+    fi
+    sleep 1
+    elapsed=$((elapsed + 1))
+done
+
+# Both the role name and the password come from this add-on (the password is
+# generated hex), so they carry no characters that need SQL escaping.
+if [ "$(psql_super --tuples-only --no-align \
+    --command "SELECT 1 FROM pg_roles WHERE rolname = '${SPARKY_FITNESS_DB_USER}'")" \
+    != "1" ]; then
+    bashio::log.info "Creating the database role '${SPARKY_FITNESS_DB_USER}'..."
+
+    # CREATEROLE is required: the server creates the limited application role
+    # itself during migration.
+    psql_super --quiet --command \
+        "CREATE ROLE \"${SPARKY_FITNESS_DB_USER}\"
+             WITH LOGIN CREATEROLE
+             PASSWORD '${SPARKY_FITNESS_DB_PASSWORD}'" \
+        || bashio::exit.nok "Could not create the database role"
+else
+    # Keeps the cluster in sync if the secrets file was replaced.
+    psql_super --quiet --command \
+        "ALTER ROLE \"${SPARKY_FITNESS_DB_USER}\"
+             WITH PASSWORD '${SPARKY_FITNESS_DB_PASSWORD}'" \
+        || bashio::exit.nok "Could not update the database role password"
+fi
+
+if [ "$(psql_super --tuples-only --no-align \
+    --command "SELECT 1 FROM pg_database WHERE datname = '${SPARKY_FITNESS_DB_NAME}'")" \
+    != "1" ]; then
+    bashio::log.info "Creating the database '${SPARKY_FITNESS_DB_NAME}'..."
+
+    psql_super --quiet --command \
+        "CREATE DATABASE \"${SPARKY_FITNESS_DB_NAME}\"
+             OWNER \"${SPARKY_FITNESS_DB_USER}\"" \
+        || bashio::exit.nok "Could not create the database"
+fi
+
+# PostgreSQL 15 and newer no longer grant the public schema implicitly.
+psql_super --quiet --dbname "${SPARKY_FITNESS_DB_NAME}" --command \
+    "GRANT ALL ON SCHEMA public TO \"${SPARKY_FITNESS_DB_USER}\"" \
+    || bashio::exit.nok "Could not grant access to the public schema"
+
+bashio::log.info "Database ready"

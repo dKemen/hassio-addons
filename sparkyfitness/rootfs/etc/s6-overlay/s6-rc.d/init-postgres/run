@@ -1,0 +1,108 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Home Assistant Add-on: SparkyFitness
+# Creates and configures the bundled PostgreSQL cluster on first start
+# ==============================================================================
+declare -r PG_MAJOR="18"
+declare -r PGDATA="${PGDATA:-/data/postgresql}"
+declare -r SOCKET_DIR="/run/postgresql"
+
+declare cluster_version
+declare pg_bin
+
+# Alpine keeps the versioned binaries out of PATH, but fall back to PATH in
+# case a future package layout changes that.
+if [ -x "/usr/libexec/postgresql${PG_MAJOR}/initdb" ]; then
+    pg_bin="/usr/libexec/postgresql${PG_MAJOR}"
+elif command -v initdb > /dev/null 2>&1; then
+    pg_bin="$(dirname "$(command -v initdb)")"
+else
+    bashio::exit.nok "Could not locate the PostgreSQL binaries"
+fi
+
+# Published before the external-database check so the other services can rely
+# on it being present.
+printf '%s' "${pg_bin}" > /run/s6/container_environment/PG_BIN
+
+if [ "${SPARKYFITNESS_LOCAL_DB}" != "true" ]; then
+    bashio::log.info \
+        "An external database is configured, skipping local cluster setup"
+    exit 0
+fi
+
+mkdir -p "${SOCKET_DIR}" || bashio::exit.nok "Could not create ${SOCKET_DIR}"
+chown postgres:postgres "${SOCKET_DIR}"
+
+mkdir -p "${PGDATA}" || bashio::exit.nok "Could not create ${PGDATA}"
+
+# A restored backup can leave the files owned by root, which PostgreSQL
+# refuses to start on. Only walk the tree when the owner is actually wrong.
+if [ "$(stat -c '%u' "${PGDATA}")" != "$(id -u postgres)" ]; then
+    bashio::log.info "Fixing ownership of ${PGDATA}..."
+    chown -R postgres:postgres "${PGDATA}"
+fi
+chmod 700 "${PGDATA}"
+
+if bashio::fs.file_exists "${PGDATA}/PG_VERSION"; then
+    cluster_version=$(cat "${PGDATA}/PG_VERSION")
+    if [ "${cluster_version}" != "${PG_MAJOR}" ]; then
+        bashio::log.error \
+            "The existing database cluster was created by PostgreSQL" \
+            "${cluster_version}, but this add-on ships PostgreSQL ${PG_MAJOR}."
+        bashio::log.error \
+            "Starting anyway would fail or damage the data. Restore a backup" \
+            "taken with an add-on version that bundles PostgreSQL" \
+            "${cluster_version}, or dump and reimport the database."
+        bashio::exit.nok
+    fi
+else
+    bashio::log.info "Initializing a new PostgreSQL ${PG_MAJOR} cluster..."
+
+    # The C locale is deliberate: musl has no useful locale support, and
+    # PostgreSQL accepts C together with any encoding.
+    if ! su-exec postgres "${pg_bin}/initdb" \
+        --pgdata="${PGDATA}" \
+        --username=postgres \
+        --encoding=UTF8 \
+        --locale=C \
+        --data-checksums \
+        --auth-local=trust \
+        --auth-host=scram-sha-256; then
+        bashio::exit.nok "Could not initialize the database cluster"
+    fi
+fi
+
+# Rewritten on every start so the settings below always win over whatever a
+# previous add-on version or a restored backup left behind.
+cat > "${PGDATA}/postgresql.conf" <<- EOF
+	listen_addresses = '127.0.0.1'
+	port = 5432
+	unix_socket_directories = '${SOCKET_DIR}'
+	max_connections = 100
+	shared_buffers = 128MB
+	dynamic_shared_memory_type = posix
+	logging_collector = off
+	log_destination = 'stderr'
+	log_timezone = '${TZ:-Etc/UTC}'
+	timezone = '${TZ:-Etc/UTC}'
+	datestyle = 'iso, mdy'
+	lc_messages = 'C'
+	lc_monetary = 'C'
+	lc_numeric = 'C'
+	lc_time = 'C'
+	default_text_search_config = 'pg_catalog.english'
+EOF
+
+# The database is never reachable from outside the container: only the loopback
+# interface and the unix socket are served.
+cat > "${PGDATA}/pg_hba.conf" <<- EOF
+	local   all   all                   trust
+	host    all   all   127.0.0.1/32    scram-sha-256
+	host    all   all   ::1/128         scram-sha-256
+EOF
+
+chown postgres:postgres "${PGDATA}/postgresql.conf" "${PGDATA}/pg_hba.conf"
+chmod 600 "${PGDATA}/postgresql.conf" "${PGDATA}/pg_hba.conf"
+
+bashio::log.info "PostgreSQL cluster ready"

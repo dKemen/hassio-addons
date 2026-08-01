@@ -1,0 +1,53 @@
+---
+name: SparkyFitness
+version: "1.6.0"
+slug: sparkyfitness
+description: Self-hosted nutrition, exercise and health tracking - a privacy-friendly MyFitnessPal alternative
+url: https://github.com/dKemen/hassio-addons/tree/master/sparkyfitness
+panel_icon: mdi:run-fast
+startup: application
+boot: auto
+# s6-overlay v3 must run as PID 1, so the Docker init must stay disabled.
+init: false
+arch:
+  - aarch64
+  - amd64
+# Used to read the host name and time zone when deriving defaults.
+hassio_api: true
+ports:
+  80/tcp: 3004
+ports_description:
+  80/tcp: SparkyFitness web interface
+webui: "http://[HOST]:[PORT:80]"
+watchdog: "http://[HOST]:[PORT:80]/"
+# The bundled PostgreSQL cluster lives in /data. A cold backup stops the
+# add-on first, so the cluster is archived in a consistent state.
+backup: cold
+tmpfs: true
+options:
+  log_level: INFO
+  allow_private_network_cors: true
+  disable_signup: false
+  force_email_login: true
+  public_api_docs: false
+schema:
+  log_level: list(DEBUG|INFO|WARN|ERROR)
+  allow_private_network_cors: bool
+  disable_signup: bool
+  force_email_login: bool
+  public_api_docs: bool
+  frontend_url: str?
+  extra_trusted_origins: str?
+  admin_email: email?
+  timezone: str?
+  email_host: str?
+  email_port: port?
+  email_secure: bool?
+  email_user: str?
+  email_password: password?
+  email_from: email?
+  database_host: str?
+  database_port: port?
+  database_name: str?
+  database_user: str?
+  database_password: password?

@@ -1,0 +1,209 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Home Assistant Add-on: SparkyFitness
+# Prepares /data, persists the generated secrets and publishes the runtime
+# configuration for all other services
+# ==============================================================================
+declare -r SECRETS_FILE="/data/secrets.json"
+declare -r ENV_DIR="/run/s6/container_environment"
+
+declare api_encryption_key
+declare app_db_password
+declare app_db_user
+declare better_auth_secret
+declare db_host
+declare db_name
+declare db_password
+declare db_port
+declare db_user
+declare frontend_url
+declare host_port
+declare timezone
+declare use_local_db
+
+# Publish a value to every later service. s6 reads this directory for each
+# script started with with-contenv, so no quoting or sourcing is involved.
+# Written under a tight umask because some of these values are secrets and the
+# container also runs an unprivileged postgres user.
+publish() {
+    (umask 077 && printf '%s' "${2}" > "${ENV_DIR}/${1}")
+}
+
+# bashio::config returns "null" for absent keys, so fall back explicitly
+# instead of relying on that.
+config_or_default() {
+    if bashio::config.has_value "${1}"; then
+        bashio::config "${1}"
+    else
+        printf '%s' "${2}"
+    fi
+}
+
+config_bool() {
+    if bashio::config.true "${1}"; then
+        printf 'true'
+    else
+        printf 'false'
+    fi
+}
+
+# ------------------------------------------------------------------------------
+# Persistent secrets
+#
+# Both secrets must survive restarts. A rotating BETTER_AUTH_SECRET logs every
+# user out on each restart, and changing it after someone enabled TOTP locks
+# that account out permanently. A rotating API encryption key orphans every
+# stored third-party credential.
+# ------------------------------------------------------------------------------
+if ! bashio::fs.file_exists "${SECRETS_FILE}"; then
+    bashio::log.info "First start: generating persistent secrets..."
+
+    # The server decodes BETTER_AUTH_SECRET with Buffer.from(value, 'base64'),
+    # so it is generated as base64. The API encryption key is documented as a
+    # 64 character hex string.
+    if ! (umask 077 && jq -n \
+        --arg api_encryption_key "$(openssl rand -hex 32)" \
+        --arg better_auth_secret "$(openssl rand -base64 32)" \
+        --arg db_password "$(openssl rand -hex 24)" \
+        --arg app_db_password "$(openssl rand -hex 24)" \
+        '$ARGS.named' > "${SECRETS_FILE}"); then
+        bashio::exit.nok "Could not write ${SECRETS_FILE}"
+    fi
+fi
+
+# Tighten the mode even when the file was written by an older add-on version.
+chmod 600 "${SECRETS_FILE}"
+
+api_encryption_key=$(jq -r '.api_encryption_key // empty' "${SECRETS_FILE}")
+better_auth_secret=$(jq -r '.better_auth_secret // empty' "${SECRETS_FILE}")
+app_db_password=$(jq -r '.app_db_password // empty' "${SECRETS_FILE}")
+
+if bashio::var.is_empty "${api_encryption_key}" \
+    || bashio::var.is_empty "${better_auth_secret}" \
+    || bashio::var.is_empty "${app_db_password}"; then
+    bashio::log.error "${SECRETS_FILE} is incomplete or corrupted."
+    bashio::log.error "Remove it to generate fresh secrets. Be aware that this"
+    bashio::log.error "logs out all users and orphans encrypted credentials."
+    bashio::exit.nok
+fi
+
+# ------------------------------------------------------------------------------
+# Data directories
+# ------------------------------------------------------------------------------
+mkdir -p /data/uploads /data/backup \
+    || bashio::exit.nok "Could not create the data directories"
+
+# ------------------------------------------------------------------------------
+# Database target
+# ------------------------------------------------------------------------------
+app_db_user="sparkyfitness_app"
+
+if bashio::config.has_value 'database_host'; then
+    use_local_db="false"
+
+    if ! bashio::config.has_value 'database_password'; then
+        bashio::exit.nok \
+            "database_password is required when database_host is configured"
+    fi
+
+    db_host=$(bashio::config 'database_host')
+    db_port=$(config_or_default 'database_port' '5432')
+    db_name=$(config_or_default 'database_name' 'sparkyfitness')
+    db_user=$(config_or_default 'database_user' 'sparkyfitness')
+    db_password=$(bashio::config 'database_password')
+
+    bashio::log.info "Using the external database at ${db_host}:${db_port}"
+else
+    use_local_db="true"
+
+    db_host="127.0.0.1"
+    db_port="5432"
+    db_name="sparkyfitness"
+    db_user="sparkyfitness"
+    db_password=$(jq -r '.db_password // empty' "${SECRETS_FILE}")
+
+    if bashio::var.is_empty "${db_password}"; then
+        bashio::exit.nok "${SECRETS_FILE} has no db_password"
+    fi
+
+    bashio::log.info "Using the bundled PostgreSQL server"
+fi
+
+# ------------------------------------------------------------------------------
+# Public URL
+#
+# Drives the CORS allow list, the Better Auth base URL and the passkey relying
+# party ID. Users behind a reverse proxy have to set it explicitly.
+# ------------------------------------------------------------------------------
+if bashio::config.has_value 'frontend_url'; then
+    frontend_url=$(bashio::config 'frontend_url')
+    frontend_url="${frontend_url%/}"
+else
+    host_port=$(bashio::app.port 80)
+    if bashio::var.has_value "${host_port}"; then
+        frontend_url="http://$(bashio::info.hostname).local:${host_port}"
+    else
+        frontend_url="http://$(bashio::info.hostname).local"
+    fi
+    bashio::log.notice "No frontend_url configured, assuming ${frontend_url}"
+    bashio::log.notice \
+        "Set frontend_url if you reach SparkyFitness under a different address."
+fi
+
+timezone=$(config_or_default 'timezone' "$(bashio::info.timezone)")
+if bashio::var.is_empty "${timezone}"; then
+    timezone="Etc/UTC"
+fi
+
+# ------------------------------------------------------------------------------
+# Publish the environment
+# ------------------------------------------------------------------------------
+publish SPARKYFITNESS_LOCAL_DB "${use_local_db}"
+
+publish SPARKY_FITNESS_DB_HOST "${db_host}"
+publish SPARKY_FITNESS_DB_PORT "${db_port}"
+publish SPARKY_FITNESS_DB_NAME "${db_name}"
+publish SPARKY_FITNESS_DB_USER "${db_user}"
+publish SPARKY_FITNESS_DB_PASSWORD "${db_password}"
+publish SPARKY_FITNESS_APP_DB_USER "${app_db_user}"
+publish SPARKY_FITNESS_APP_DB_PASSWORD "${app_db_password}"
+
+publish SPARKY_FITNESS_API_ENCRYPTION_KEY "${api_encryption_key}"
+publish BETTER_AUTH_SECRET "${better_auth_secret}"
+
+publish SPARKY_FITNESS_FRONTEND_URL "${frontend_url}"
+publish SPARKY_FITNESS_LOG_LEVEL "$(bashio::config 'log_level')"
+publish ALLOW_PRIVATE_NETWORK_CORS "$(config_bool 'allow_private_network_cors')"
+publish SPARKY_FITNESS_DISABLE_SIGNUP "$(config_bool 'disable_signup')"
+publish SPARKY_FITNESS_FORCE_EMAIL_LOGIN "$(config_bool 'force_email_login')"
+publish SPARKY_FITNESS_PUBLIC_API_DOCS "$(config_bool 'public_api_docs')"
+publish SPARKY_FITNESS_EXTRA_TRUSTED_ORIGINS \
+    "$(config_or_default 'extra_trusted_origins' '')"
+publish SPARKY_FITNESS_ADMIN_EMAIL "$(config_or_default 'admin_email' '')"
+
+publish SPARKY_FITNESS_CUSTOM_UPLOADS_DIRECTORY "/data/uploads"
+publish SPARKY_FITNESS_CUSTOM_BACKUP_DIRECTORY "/data/backup"
+publish NODE_ENV "production"
+publish TZ "${timezone}"
+
+# Optional SMTP settings. Leaving them unset disables e-mail in the server.
+if bashio::config.has_value 'email_host'; then
+    publish SPARKY_FITNESS_EMAIL_HOST "$(bashio::config 'email_host')"
+    publish SPARKY_FITNESS_EMAIL_PORT "$(config_or_default 'email_port' '587')"
+    publish SPARKY_FITNESS_EMAIL_SECURE "$(config_bool 'email_secure')"
+    publish SPARKY_FITNESS_EMAIL_USER "$(config_or_default 'email_user' '')"
+    publish SPARKY_FITNESS_EMAIL_PASS "$(config_or_default 'email_password' '')"
+    publish SPARKY_FITNESS_EMAIL_FROM "$(config_or_default 'email_from' '')"
+fi
+
+# The frontend nginx proxies to the backend inside this same container, and
+# both logs go to the add-on log instead of files.
+publish SPARKY_FITNESS_SERVER_HOST "127.0.0.1"
+publish SPARKY_FITNESS_SERVER_PORT "3010"
+publish NGINX_LISTEN_PORT "80"
+publish NGINX_ACCESS_LOG "/dev/stdout"
+publish NGINX_ERROR_LOG "/dev/stderr"
+publish NGINX_RATE_LIMIT "5r/s"
+
+bashio::log.info "Configuration prepared"

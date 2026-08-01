@@ -1,0 +1,95 @@
+---
+configuration:
+  log_level:
+    name: Log level
+    description: >-
+      How much detail the SparkyFitness server writes to the add-on log.
+      Raise this to DEBUG when troubleshooting.
+  allow_private_network_cors:
+    name: Allow private network access
+    description: >-
+      Accept requests from private network addresses and drop the Secure flag
+      from session cookies. Required to log in over plain HTTP on your LAN.
+      Turn it off only when you reach SparkyFitness over HTTPS.
+  disable_signup:
+    name: Disable registration
+    description: >-
+      Block new account registrations. Enable this once you have created the
+      accounts you need.
+  force_email_login:
+    name: Force e-mail login
+    description: >-
+      Always keep e-mail and password login available. This is a fail-safe that
+      prevents you from being locked out by a broken OIDC configuration.
+  public_api_docs:
+    name: Public API documentation
+    description: >-
+      Serve the Swagger API documentation at /api/api-docs without requiring a
+      login.
+  frontend_url:
+    name: Public URL
+    description: >-
+      The address you use to reach SparkyFitness, for example
+      https://fitness.example.com. Leave empty to derive it from your Home
+      Assistant host name and the configured port. Set it when you use a
+      reverse proxy, otherwise logins and CORS may fail.
+  extra_trusted_origins:
+    name: Additional trusted origins
+    description: >-
+      Comma separated list of extra addresses that are allowed to talk to the
+      server, for example http://192.168.1.10:3004.
+  admin_email:
+    name: Administrator e-mail
+    description: >-
+      The account with this e-mail address is granted administrator privileges
+      each time the add-on starts. Register the account first.
+  timezone:
+    name: Time zone
+    description: >-
+      Time zone used by the server, for example Europe/Berlin. Leave empty to
+      use the Home Assistant system time zone.
+  email_host:
+    name: SMTP server
+    description: >-
+      Mail server host name. Leave empty to disable outgoing e-mail, which also
+      disables password reset messages.
+  email_port:
+    name: SMTP port
+    description: Mail server port. Defaults to 587.
+  email_secure:
+    name: SMTP uses TLS
+    description: Enable for an implicit TLS connection, usually on port 465.
+  email_user:
+    name: SMTP user name
+    description: User name for mail server authentication.
+  email_password:
+    name: SMTP password
+    description: Password for mail server authentication.
+  email_from:
+    name: Sender address
+    description: Address that outgoing e-mail is sent from.
+  database_host:
+    name: External database host
+    description: >-
+      Leave empty to use the PostgreSQL server bundled with this add-on, which
+      needs no configuration. Set a host name only if you want to use your own
+      PostgreSQL 18 server. The database and its owner role must already exist
+      there.
+  database_port:
+    name: External database port
+    description: Port of the external PostgreSQL server. Defaults to 5432.
+  database_name:
+    name: External database name
+    description: Name of the existing database. Defaults to sparkyfitness.
+  database_user:
+    name: External database user
+    description: >-
+      Owner role of the database. It needs the CREATEROLE privilege so the
+      server can create its own limited application role.
+  database_password:
+    name: External database password
+    description: Password of the database owner role.
+network:
+  80/tcp: >-
+    Port the SparkyFitness web interface is published on. Open the interface
+    with the OPEN WEB UI button.

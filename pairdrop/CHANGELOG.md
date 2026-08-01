@@ -2,9 +2,10 @@
 
 ## 1.11.2.1
 
-- New `instance_name` option: renames the browser tab, the installed app and
-  the About dialog. The Home Assistant sidebar entry is unaffected — that one
-  is fixed in `config.yaml`.
+- New `instance_name` option: renames the browser tab, the interface text in
+  every language, the About dialog and the installed app. Links to the upstream
+  project keep the name PairDrop. The Home Assistant sidebar entry is
+  unaffected — that one is fixed in `config.yaml`.
 - New `primary_color` option: replaces PairDrop's default accent colour in both
   light and dark mode, and the theme colour of the installed app.
 - Both are applied by rewriting the served files from untouched copies on every

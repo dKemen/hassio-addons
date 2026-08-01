@@ -20,10 +20,11 @@ configuration:
   instance_name:
     name: Instance name
     description: >-
-      Rename the instance, for example "Kemen Drop". Changes the browser tab
-      title, the name used when the app is installed to a home screen, and the
-      About dialog. It does not change the Home Assistant sidebar entry, which
-      is fixed in the add-on configuration.
+      Rename the instance, for example "Home Drop". Changes the browser tab
+      title, the interface text in every language, the About dialog and the
+      name used when the app is installed to a home screen. Links pointing at
+      the upstream PairDrop project keep its name. The Home Assistant sidebar
+      entry is not affected; it is fixed in the add-on configuration.
   primary_color:
     name: Accent colour
     description: >-

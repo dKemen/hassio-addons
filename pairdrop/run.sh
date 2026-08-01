@@ -15,6 +15,20 @@ readonly OPTIONS_FILE="/data/options.json"
 readonly PUBLIC_DIR="/app/pairdrop/public"
 readonly PRISTINE_DIR="/opt/pairdrop-pristine"
 
+# Translation keys whose text refers to this instance rather than to the
+# upstream project. Deliberately excluded are about.github_title,
+# about.tweet_title and about.mastodon_title, which name the project itself.
+readonly INSTANCE_TEXT_KEYS='[
+    ["header","about_title"],
+    ["header","about_aria-label"],
+    ["header","install_title"],
+    ["about","close-about_aria-label"],
+    ["notifications","unfinished-transfers-warning"],
+    ["instructions","no-peers-title"],
+    ["instructions","activate-share-mode-base"],
+    ["instructions","webrtc-requirement"]
+]'
+
 # Prints the option as a string, or nothing when it is absent or null.
 # Booleans come out as "true"/"false" and integers as digits, which is exactly
 # what PairDrop expects.
@@ -42,12 +56,13 @@ export_if_set() {
 # idempotent: a restart re-applies the current options instead of stacking
 # another edit on top of the previous one.
 apply_branding() {
-    local name colour escaped cache_suffix
+    local name colour escaped cache_suffix lang_file
 
     cp "${PRISTINE_DIR}/index.html" "${PUBLIC_DIR}/index.html"
     cp "${PRISTINE_DIR}/manifest.json" "${PUBLIC_DIR}/manifest.json"
     cp "${PRISTINE_DIR}/service-worker.js" "${PUBLIC_DIR}/service-worker.js"
     cp "${PRISTINE_DIR}/styles/styles-main.css" "${PUBLIC_DIR}/styles/styles-main.css"
+    cp "${PRISTINE_DIR}/lang/." "${PUBLIC_DIR}/lang/" -r
 
     name="$(option instance_name)"
     colour="$(option primary_color)"
@@ -68,7 +83,25 @@ apply_branding() {
             -e "s|\(<meta name=\"apple-mobile-web-app-title\" content=\)\"[^\"]*\"|\1\"${escaped}\"|" \
             -e "s|\(<meta property=\"og:title\" content=\)\"[^\"]*\"|\1\"${escaped}\"|" \
             -e "s|<h1>PairDrop</h1>|<h1>${escaped}</h1>|" \
+            -e "s|<h3>PairDrop works only with JavaScript</h3>|<h3>${escaped} works only with JavaScript</h3>|" \
             "${PUBLIC_DIR}/index.html"
+
+        # The interface text lives in a translation file per language. Only the
+        # phrases that talk about this instance are renamed; the three that
+        # point at the upstream project keep its name, because "<name> on
+        # GitHub" would send people somewhere that does not exist.
+        for lang_file in "${PUBLIC_DIR}"/lang/*.json; do
+            [ -f "${lang_file}" ] || continue
+            # split/join instead of a regex, so no character in the name needs
+            # escaping.
+            jq --arg name "${name}" --argjson keys "${INSTANCE_TEXT_KEYS}" '
+                reduce $keys[] as $path (.;
+                    if (getpath($path) | type) == "string"
+                    then setpath($path; getpath($path) | split("PairDrop") | join($name))
+                    else . end)
+            ' "${lang_file}" > "${lang_file}.tmp" \
+                && mv "${lang_file}.tmp" "${lang_file}"
+        done
 
         # name and short_name drive the label when the app is installed to a
         # home screen.

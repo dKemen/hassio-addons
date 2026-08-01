@@ -66,22 +66,22 @@ Logs the environment and the IP addresses of connected peers. Defaults to
 
 ### Option: `instance_name` (optional)
 
-Renames the instance, for example `Kemen Drop`. PairDrop has no setting for
-this, so the add-on rewrites the files it serves. Affected are the browser tab
-title, the name used when the app is installed to a home screen, and the
-heading in the About dialog.
+Renames the instance, for example `Home Drop`. PairDrop has no setting for
+this, so the add-on rewrites the files it serves. Renamed are the browser tab
+title, the name used when the app is installed to a home screen, the heading in
+the About dialog, and the interface text in every language — including the
+sentence on the empty start screen, which becomes "Open Home Drop on other
+devices to send files".
 
-Two things it does **not** change:
+Three phrases keep the name PairDrop on purpose: "PairDrop on GitHub", "Tweet
+about PairDrop" and "Write about PairDrop on Mastodon". They sit next to links
+pointing at the upstream project, so renaming them would send people to
+something that does not exist.
 
-- **The entry in the Home Assistant sidebar.** That comes from `panel_title` in
-  `pairdrop/config.yaml` and the Supervisor reads it only from that file, so no
-  add-on option can drive it. To rename it, edit `config.yaml` in this
-  repository and reinstall the add-on.
-- **Sentences that mention PairDrop inside the interface**, such as "Open
-  PairDrop on other devices to send files". Those come from the translation
-  files for 30-odd languages, and some of them refer to the project rather than
-  to your instance — "PairDrop on GitHub", for instance. Rewriting them all
-  would produce wrong text more often than right text.
+What the option cannot reach is **the entry in the Home Assistant sidebar**.
+That comes from `panel_title` in `pairdrop/config.yaml`, which the Supervisor
+reads only from that file, so no add-on option can drive it. To rename it, edit
+`config.yaml` in this repository and reinstall the add-on.
 
 ### Option: `primary_color` (optional)
 

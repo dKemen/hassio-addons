@@ -22,7 +22,8 @@ RUN set -eu; \
     mkdir -p /opt/pairdrop-pristine/styles; \
     cd /app/pairdrop/public; \
     cp index.html manifest.json service-worker.js /opt/pairdrop-pristine/; \
-    cp styles/styles-main.css /opt/pairdrop-pristine/styles/
+    cp styles/styles-main.css /opt/pairdrop-pristine/styles/; \
+    cp -r lang /opt/pairdrop-pristine/lang
 
 COPY run.sh /run.sh
 RUN chmod 755 /run.sh

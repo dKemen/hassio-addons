@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.11.4
+
+- Rebuild on linuxserver.io build `ls145` (still PairDrop 1.11.2), picking up
+  the updated Alpine base packages.
+
 ## 1.11.2.1
 
 - New `instance_name` option: renames the browser tab, the interface text in

@@ -4,8 +4,8 @@
 # The upstream backend image is the base on purpose: the server runs straight
 # from TypeScript via tsx against node_modules that were built for Node 24 on
 # musl. Swapping in a different base would risk native-module ABI mismatches.
-ARG BUILD_FROM=codewithcj/sparkyfitness_server:v1.6.0
-ARG SPARKYFITNESS_FRONTEND=codewithcj/sparkyfitness:v1.6.0
+ARG BUILD_FROM=codewithcj/sparkyfitness_server:v1.7.3
+ARG SPARKYFITNESS_FRONTEND=codewithcj/sparkyfitness:v1.7.3
 
 # The frontend stage only supplies the pre-built static assets, the nginx
 # template and the upstream entrypoint that renders it.

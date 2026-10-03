@@ -6,7 +6,7 @@
 # Pulled from ghcr.io rather than lscr.io. Both serve the same image, but
 # lscr.io is a redirector that is not reachable from every network, and a
 # failure there breaks the build before it starts.
-ARG BUILD_FROM=ghcr.io/linuxserver/pairdrop:v1.11.2-ls142
+ARG BUILD_FROM=ghcr.io/linuxserver/pairdrop:v1.11.2-ls145
 # hadolint ignore=DL3006
 FROM ${BUILD_FROM}
 

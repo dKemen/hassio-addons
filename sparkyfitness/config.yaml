@@ -1,6 +1,6 @@
 ---
 name: SparkyFitness
-version: "1.6.0"
+version: "1.7.3"
 slug: sparkyfitness
 description: Self-hosted nutrition, exercise and health tracking - a privacy-friendly MyFitnessPal alternative
 url: https://github.com/dKemen/hassio-addons/tree/master/sparkyfitness

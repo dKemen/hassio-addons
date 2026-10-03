@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.7.3
+
+- Update SparkyFitness to v1.7.3. The server applies the pending database
+  migrations (including the Better Auth 1.7.4 upgrade) on the first start, so
+  take a backup before updating.
+- The upstream nginx template now proxies through a resolver; the bundled
+  entrypoint detects it from `/etc/resolv.conf`, no configuration needed.
+
 ## 1.6.0
 
 - Initial release, packaging SparkyFitness v1.6.0.

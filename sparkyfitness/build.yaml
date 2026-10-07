@@ -3,5 +3,5 @@
 # add-ons. Newer Supervisor releases no longer inject BUILD_FROM, which is why
 # the Dockerfile carries the same value as an ARG default.
 build_from:
-  aarch64: codewithcj/sparkyfitness_server:v1.6.0
-  amd64: codewithcj/sparkyfitness_server:v1.6.0
+  aarch64: codewithcj/sparkyfitness_server:v1.7.3
+  amd64: codewithcj/sparkyfitness_server:v1.7.3
